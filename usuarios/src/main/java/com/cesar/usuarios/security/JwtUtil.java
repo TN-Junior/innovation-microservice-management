@@ -39,4 +39,14 @@ public class JwtUtil {
             return false;
         }
     }
+
+    public String gerarToken(String email, long expiracaoMs) {
+        return Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expiracaoMs))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
 }

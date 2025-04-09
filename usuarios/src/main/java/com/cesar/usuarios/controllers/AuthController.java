@@ -28,17 +28,19 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
-            Authentication auth = authenticationManager.authenticate(
+            authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getSenha())
             );
 
-            String token = jwtUtil.gerarToken(request.getEmail());
+            String accessToken = jwtUtil.gerarToken(request.getEmail(), 1000 * 60 * 15); // 15 min
+            String refreshToken = jwtUtil.gerarToken(request.getEmail(), 1000L * 60 * 60 * 24 * 7); // 7 dias
 
-            return ResponseEntity.ok(new AuthResponse(token));
+            return ResponseEntity.ok(new AuthTokens(accessToken, refreshToken));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(401).body("Credenciais inválidas");
         }
     }
+
 
     @PostMapping("/register")
     public ResponseEntity<?> registrar(@RequestBody Usuario usuario) {
@@ -49,6 +51,25 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestHeader("Authorization") String refreshHeader) {
+        if (refreshHeader == null || !refreshHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("Token ausente ou mal formado");
+        }
+
+        String refreshToken = refreshHeader.substring(7);
+
+        if (!jwtUtil.tokenValido(refreshToken)) {
+            return ResponseEntity.status(403).body("Token inválido");
+        }
+
+        String email = jwtUtil.extrairEmail(refreshToken);
+        String newAccessToken = jwtUtil.gerarToken(email, 1000 * 60 * 15); // 15 min
+
+        return ResponseEntity.ok(new AuthTokens(newAccessToken, refreshToken));
+    }
+
 
 
     @Data
@@ -63,4 +84,11 @@ public class AuthController {
     static class AuthResponse {
         private final String token;
     }
+
+    @Data
+    static class AuthTokens {
+        private final String accessToken;
+        private final String refreshToken;
+    }
+
 }
