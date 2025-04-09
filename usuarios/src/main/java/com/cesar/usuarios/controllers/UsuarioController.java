@@ -21,16 +21,7 @@ public class UsuarioController {
     public ResponseEntity<List<UsuarioDTO>> listar() {
         return ResponseEntity.ok(service.listarTodos());
     }
-
-    @PostMapping
-    public ResponseEntity<?> criar(@RequestBody Usuario usuario) {
-        try {
-            UsuarioDTO novoUsuario = service.salvar(usuario);
-            return ResponseEntity.status(HttpStatus.CREATED).body(novoUsuario);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
 }
+
 
 
